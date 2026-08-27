@@ -83,7 +83,7 @@
     .btn-sub:active { background: #FFE6CC; }
 
     .mic-level-container {
-      width: 100%; background: #e0e0e0; height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 8px;
+      width: 100%; background: #e0e0e0; height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 8px;
     }
     .mic-level-bar { height: 100%; width: 0%; background: #28a745; transition: width 0.05s; }
 
@@ -136,8 +136,8 @@
     </div>
     
     <div class="sensitivity-box">
-      <label for="threshold">Mic Sensitivity:</label>
-      <input type="range" id="threshold" min="5" max="50" value="15">
+      <label for="threshold">Voice Sensitivity Trigger:</label>
+      <input type="range" id="threshold" min="2" max="30" value="6">
     </div>
     
     <div class="speech-status" id="speechStatus">Mic status: Disabled</div>
@@ -171,10 +171,13 @@
     let microphoneStream = null;
     let isAudioActive = false;
     let wakeLock = null;
+    let recognition = null;
 
     let isChanting = false;
     let chantStartTime = 0;
     let lastIncrementTime = 0;
+
+    const keywords = ["om", "bhur", "bhuva", "swaha", "tat", "savitur", "varenyam", "bhargo", "devasya", "dhimahi", "dhiyo", "yonah", "prachodayat"];
 
     function saveState() {
       localStorage.setItem('japam_count', count);
@@ -302,34 +305,79 @@
       }
     }
 
+    // Hybrid Web Audio & Speech Recognition Engine
     async function startAudioCounter() {
       try {
         microphoneStream = await navigator.mediaDevices.getUserMedia({ 
-          audio: { echoCancellation: true, noiseSuppression: true } 
+          audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: true } 
         });
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
         
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
         if (audioContext.state === 'suspended') {
           await audioContext.resume();
         }
 
         analyser = audioContext.createAnalyser();
         const source = audioContext.createMediaStreamSource(microphoneStream);
-        source.connect(analyser);
         
+        // Voice pitch bandpass filter (100Hz - 1000Hz)
+        const filter = audioContext.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 550;
+        filter.Q.value = 0.9;
+
+        source.connect(filter);
+        filter.connect(analyser);
+
         analyser.fftSize = 256;
         isAudioActive = true;
         
         requestWakeLock();
+        initSpeechRecognition();
+
         document.getElementById('micBtn').classList.add('listening');
         document.getElementById('micBtn').innerText = "🛑 Stop Listening";
-        document.getElementById('speechStatus').innerText = "Listening... Speak Mantra";
+        document.getElementById('speechStatus').innerText = "Listening... Start chanting.";
         
         processAudio();
       } catch (err) {
         console.error("Mic Access Error:", err);
-        document.getElementById('speechStatus').innerText = "Open via http://localhost or host online.";
+        document.getElementById('speechStatus').innerText = "Microphone access blocked.";
       }
+    }
+
+    function initSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) return;
+
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            transcript = event.results[i][0].transcript.toLowerCase();
+            const matched = keywords.some(word => transcript.includes(word));
+            const now = Date.now();
+            if (matched && (now - lastIncrementTime > 2000)) {
+              increment();
+              lastIncrementTime = now;
+              document.getElementById('speechStatus').innerText = `Chant Recognized! (${count}/${target})`;
+            }
+          }
+        }
+      };
+
+      recognition.onend = () => {
+        if (isAudioActive && !isCompleted && !isPaused) {
+          try { recognition.start(); } catch(e) {}
+        }
+      };
+
+      try { recognition.start(); } catch(e) {}
     }
 
     function processAudio() {
@@ -342,15 +390,15 @@
       for (let i = 0; i < dataArray.length; i++) {
         sum += dataArray[i];
       }
-      let averageVolume = sum / dataArray.length;
+      let voiceEnergy = sum / dataArray.length;
 
       // Update Visual Meter Bar
-      document.getElementById('micLevelBar').style.width = Math.min(100, averageVolume * 3) + '%';
+      document.getElementById('micLevelBar').style.width = Math.min(100, voiceEnergy * 5) + '%';
 
       const userThreshold = parseInt(document.getElementById('threshold').value);
       const now = Date.now();
 
-      if (averageVolume > userThreshold) {
+      if (voiceEnergy > userThreshold) {
         if (!isChanting) {
           isChanting = true;
           chantStartTime = now;
@@ -358,8 +406,8 @@
       } else {
         if (isChanting) {
           const chantDuration = now - chantStartTime;
-          // Chant length validation: Minimum 1.8 seconds of continuous recitation
-          if (chantDuration > 1800 && (now - lastIncrementTime > 2000)) {
+          // Chant length validation: 1.5s voice activity with 2s interval limit
+          if (chantDuration > 1500 && (now - lastIncrementTime > 2000)) {
             increment();
             lastIncrementTime = now;
             document.getElementById('speechStatus').innerText = `Chant Detected! (${count}/${target})`;
@@ -373,6 +421,10 @@
 
     function stopAudioCounter() {
       isAudioActive = false;
+      if (recognition) {
+        try { recognition.stop(); } catch(e) {}
+        recognition = null;
+      }
       if (microphoneStream) {
         microphoneStream.getTracks().forEach(track => track.stop());
         microphoneStream = null;
