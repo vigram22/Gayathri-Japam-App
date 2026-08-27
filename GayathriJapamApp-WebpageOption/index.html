@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gayathri Japam Counter</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* Background Image: Krishna with Flute */
+      background: linear-gradient(rgba(255, 248, 240, 0.75), rgba(255, 230, 204, 0.85)), 
+                  url('images-krishna-1.jfif') center/cover no-repeat fixed;
+      padding: 20px;
+    }
+    
+    .card {
+      background: rgba(255, 253, 248, 0.96);
+      border: 4px solid #FF9933;
+      border-radius: 28px;
+      box-shadow: 0 12px 36px rgba(204, 85, 0, 0.3);
+      width: 100%;
+      max-width: 460px;
+      padding: 32px 24px;
+      text-align: center;
+      position: relative;
+      backdrop-filter: blur(4px);
+    }
+    
+    h1 { color: #CC5500; font-size: 30px; margin-bottom: 6px; }
+    .sub { color: #8B4513; font-size: 16px; margin-bottom: 20px; font-weight: 700; }
+    
+    .timer {
+      display: inline-block;
+      background: #FFE6CC;
+      color: #CC5500;
+      font-weight: bold;
+      font-size: 22px;
+      padding: 8px 22px;
+      border-radius: 24px;
+      border: 2px solid #FF9933;
+      margin-bottom: 22px;
+    }
+    
+    .counter-box {
+      background: linear-gradient(135deg, #FF9933 0%, #FF8000 100%);
+      color: #FFFFFF;
+      border-radius: 22px;
+      padding: 32px 14px;
+      margin-bottom: 22px;
+      box-shadow: 0 8px 20px rgba(204, 85, 0, 0.35);
+    }
+    
+    .count-val { font-size: 84px; font-weight: 900; line-height: 1; }
+    .target-val { font-size: 18px; margin-top: 12px; opacity: 0.95; font-weight: 600; }
+    
+    .progress-bg { background: #FFE6CC; height: 14px; border-radius: 7px; overflow: hidden; margin-bottom: 26px; }
+    .progress-fill { background: #CC5500; height: 100%; width: 0%; transition: width 0.2s; }
+    
+    .btn-main {
+      background: #FF9933; color: white; border: none; width: 100%;
+      padding: 22px; font-size: 26px; font-weight: bold; border-radius: 18px;
+      cursor: pointer; box-shadow: 0 8px 16px rgba(255, 153, 51, 0.45); margin-bottom: 16px;
+      transition: transform 0.1s;
+    }
+    .btn-main:active { transform: scale(0.97); background: #E67E00; }
+    
+    .row { display: flex; gap: 10px; margin-bottom: 10px; }
+    .btn-sub {
+      flex: 1; padding: 14px; border: 2px solid #FF9933; background: white;
+      color: #CC5500; font-weight: bold; border-radius: 14px; cursor: pointer; font-size: 15px;
+    }
+    .btn-sub:active { background: #FFE6CC; }
+    
+    /* Overlay Screen: Fitted Image Display */
+    .overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.75); z-index: 1000;
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    .overlay.active { display: flex; }
+    
+    .overlay-card {
+      background: #FFFDF8; border: 4px solid #FF9933; border-radius: 24px;
+      padding: 20px; text-align: center; max-width: 420px; width: 100%;
+      max-height: 90vh; display: flex; flex-direction: column; align-items: center;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    }
+    
+    .end-img {
+      width: 100%; max-height: 50vh; border-radius: 16px;
+      object-fit: contain; margin-bottom: 14px; border: 2px solid #FF9933;
+      background-color: #000;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Local Audio Tag -->
+  <audio id="shankhAudio" src="shankh.mp3" preload="auto"></audio>
+
+  <div class="card">
+    <h1>ॐ Gayathri Japam</h1>
+    <div class="sub" id="subTitle">1008 Sacred Chants Counter</div>
+    <div class="timer" id="timerDisplay">⏱️ 00:00:00</div>
+
+    <div class="counter-box">
+      <div class="count-val" id="countDisplay">0</div>
+      <div class="target-val">Target: <span id="targetDisplay">1008</span></div>
+    </div>
+
+    <div class="progress-bg">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <button class="btn-main" onclick="increment()">COUNT (TAP)</button>
+
+    <div class="row">
+      <button class="btn-sub" id="pauseBtn" onclick="togglePause()">⏸️ Pause</button>
+      <button class="btn-sub" onclick="toggleTarget()">🎯 Target: <span id="targetBtnLabel">1008</span></button>
+      <button class="btn-sub" onclick="resetApp()">🔄 Reset</button>
+    </div>
+  </div>
+
+  <!-- End Completion Modal Overlay -->
+  <div class="overlay" id="endOverlay">
+    <div class="overlay-card">
+      <img src="images-krishna-3.jfif" class="end-img" alt="Krishna Viswaroopam" />
+      <h2 style="color: #CC5500; margin-bottom: 6px; font-size: 24px;">Japam Completed!</h2>
+      <p style="color: #8B4513; margin-bottom: 16px; font-weight:700; font-size: 18px;" id="finalTimeText">Total Time: 00:00:00</p>
+      <button class="btn-main" onclick="resetApp()">Start New Japam</button>
+    </div>
+  </div>
+
+  <script>
+    let count = parseInt(localStorage.getItem('japam_count')) || 0;
+    let target = parseInt(localStorage.getItem('japam_target')) || 1008;
+    let secondsElapsed = parseInt(localStorage.getItem('japam_seconds')) || 0;
+    let isCompleted = localStorage.getItem('japam_completed') === 'true';
+    let isPaused = localStorage.getItem('japam_paused') === 'true';
+    let timerInterval = null;
+
+    function saveState() {
+      localStorage.setItem('japam_count', count);
+      localStorage.setItem('japam_target', target);
+      localStorage.setItem('japam_seconds', secondsElapsed);
+      localStorage.setItem('japam_completed', isCompleted);
+      localStorage.setItem('japam_paused', isPaused);
+    }
+
+    function playSynthConch() {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      const now = audioCtx.currentTime;
+      osc.frequency.setValueAtTime(220, now);
+      osc.frequency.exponentialRampToValueAtTime(330, now + 1.2);
+      osc.frequency.exponentialRampToValueAtTime(310, now + 3.5);
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(0.8, now + 0.8);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 4.0);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 4.0);
+    }
+
+    function playSound() {
+      const audioElem = document.getElementById('shankhAudio');
+      if (audioElem) {
+        audioElem.play().catch(err => {
+          console.log("Local audio play blocked, using synth sound", err);
+          playSynthConch();
+        });
+      } else {
+        playSynthConch();
+      }
+    }
+
+    function updateUI() {
+      document.getElementById('countDisplay').innerText = count;
+      document.getElementById('targetDisplay').innerText = target;
+      document.getElementById('targetBtnLabel').innerText = target;
+      document.getElementById('subTitle').innerText = `${target} Sacred Chants Counter`;
+      document.getElementById('progressFill').style.width = `${(count / target) * 100}%`;
+      
+      const hrs = String(Math.floor(secondsElapsed / 3600)).padStart(2, '0');
+      const mins = String(Math.floor((secondsElapsed % 3600) / 60)).padStart(2, '0');
+      const secs = String(secondsElapsed % 60).padStart(2, '0');
+      document.getElementById('timerDisplay').innerText = `⏱️ ${hrs}:${mins}:${secs}`;
+      document.getElementById('pauseBtn').innerText = isPaused ? '▶️ Resume' : '⏸️ Pause';
+
+      if (isCompleted) {
+        document.getElementById('finalTimeText').innerText = `Total Time: ${hrs}:${mins}:${secs}`;
+        document.getElementById('endOverlay').classList.add('active');
+      } else {
+        document.getElementById('endOverlay').classList.remove('active');
+      }
+    }
+
+    function startTimer() {
+      if (!timerInterval && !isCompleted && !isPaused) {
+        timerInterval = setInterval(() => {
+          secondsElapsed++;
+          saveState();
+          updateUI();
+        }, 1000);
+      }
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    function togglePause() {
+      if (isCompleted || count === 0) return;
+      isPaused = !isPaused;
+      if (isPaused) {
+        stopTimer();
+      } else {
+        startTimer();
+      }
+      saveState();
+      updateUI();
+    }
+
+    function increment() {
+      if (isCompleted) return;
+      if (isPaused) {
+        isPaused = false;
+      }
+      if (count === 0 || !timerInterval) {
+        startTimer();
+      }
+
+      count++;
+      if (count >= target) {
+        count = target;
+        isCompleted = true;
+        stopTimer();
+        playSound();
+      }
+      saveState();
+      updateUI();
+    }
+
+    function toggleTarget() {
+      target = target === 1008 ? 108 : 1008;
+      if (count >= target) {
+        count = target;
+        isCompleted = true;
+        stopTimer();
+        playSound();
+      }
+      saveState();
+      updateUI();
+    }
+
+    function resetApp() {
+      count = 0;
+      secondsElapsed = 0;
+      isCompleted = false;
+      isPaused = false;
+      stopTimer();
+      localStorage.clear();
+      saveState();
+      updateUI();
+    }
+
+    updateUI();
+    if (count > 0 && !isCompleted && !isPaused) startTimer();
+  </script>
+</body>
+</html>
