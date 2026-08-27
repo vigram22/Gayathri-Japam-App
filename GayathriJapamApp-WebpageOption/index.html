@@ -5,18 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Gayathri Japam Counter</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    
-    body {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      /* Background Image: Krishna with Flute */
-      background: linear-gradient(rgba(255, 248, 240, 0.75), rgba(255, 230, 204, 0.85)), 
-                  url('images-krishna-1.jfif') center/cover no-repeat fixed;
-      padding: 20px;
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      -webkit-tap-highlight-color: transparent; /* Option 1: Removes blue highlight box on mobile tap */
     }
+    
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(rgba(255, 248, 240, 0.45), rgba(255, 230, 204, 0.55)), 
+              url('images-krishna-1.jfif') no-repeat fixed;
+  background-position: 70% 50%; /* Adjust 70% higher/lower to move along X-axis */
+  background-size: cover;
+  padding: 20px;
+}
+
+
     
     .card {
       background: rgba(255, 253, 248, 0.96);
@@ -24,83 +33,133 @@
       border-radius: 28px;
       box-shadow: 0 12px 36px rgba(204, 85, 0, 0.3);
       width: 100%;
-      max-width: 460px;
+      max-width: 440px;
       padding: 32px 24px;
       text-align: center;
-      position: relative;
       backdrop-filter: blur(4px);
+      user-select: none;
+      -webkit-user-select: none;
     }
     
-    h1 { color: #CC5500; font-size: 30px; margin-bottom: 6px; }
-    .sub { color: #8B4513; font-size: 16px; margin-bottom: 20px; font-weight: 700; }
+    h1 { color: #CC5500; font-size: 28px; margin-bottom: 4px; }
+    .sub { color: #8B4513; font-size: 15px; margin-bottom: 16px; font-weight: 700; }
     
     .timer {
       display: inline-block;
       background: #FFE6CC;
       color: #CC5500;
       font-weight: bold;
-      font-size: 22px;
-      padding: 8px 22px;
-      border-radius: 24px;
+      font-size: 20px;
+      padding: 6px 20px;
+      border-radius: 20px;
       border: 2px solid #FF9933;
-      margin-bottom: 22px;
+      margin-bottom: 20px;
     }
     
-    .counter-box {
-      background: linear-gradient(135deg, #FF9933 0%, #FF8000 100%);
-      color: #FFFFFF;
-      border-radius: 22px;
-      padding: 32px 14px;
-      margin-bottom: 22px;
-      box-shadow: 0 8px 20px rgba(204, 85, 0, 0.35);
+    /* Circular Progress Display */
+    .circle-container {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      margin: 0 auto 24px auto;
     }
-    
-    .count-val { font-size: 84px; font-weight: 900; line-height: 1; }
-    .target-val { font-size: 18px; margin-top: 12px; opacity: 0.95; font-weight: 600; }
-    
-    .progress-bg { background: #FFE6CC; height: 14px; border-radius: 7px; overflow: hidden; margin-bottom: 26px; }
-    .progress-fill { background: #CC5500; height: 100%; width: 0%; transition: width 0.2s; }
+
+    .circle-svg {
+      transform: rotate(-90deg);
+      width: 100%;
+      height: 100%;
+    }
+
+    .circle-bg {
+      fill: none;
+      stroke: #FFE6CC;
+      stroke-width: 14;
+    }
+
+    .circle-progress {
+      fill: none;
+      stroke: #FF9933;
+      stroke-width: 14;
+      stroke-linecap: round;
+      stroke-dasharray: 628;
+      stroke-dashoffset: 628;
+      transition: stroke-dashoffset 0.3s ease;
+    }
+
+.circle-inner {
+  position: absolute;
+  top: 15px; left: 15px; right: 15px; bottom: 15px; /* Fits inside the progress ring */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  
+/* Blends a white overlay with the image to lighten it */
+  background-image: linear-gradient(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.65)), 
+                    url('images-krishna-1.jfif');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.1);
+}
+.count-val { 
+  font-size: 64px; 
+  font-weight: 900; 
+  color: #CC5500; 
+  line-height: 1; 
+  text-shadow: 0 2px 8px rgba(255, 255, 255, 0.85);
+}
+.target-val { 
+  font-size: 15px; 
+  margin-top: 6px; 
+  color: #8B4513; 
+  font-weight: 700; 
+  text-shadow: 0 1px 4px rgba(255, 255, 255, 0.85);
+}
     
     .btn-main {
-      background: #FF9933; color: white; border: none; width: 100%;
-      padding: 22px; font-size: 26px; font-weight: bold; border-radius: 18px;
-      cursor: pointer; box-shadow: 0 8px 16px rgba(255, 153, 51, 0.45); margin-bottom: 16px;
-      transition: transform 0.1s;
+      background: linear-gradient(135deg, #FF9933 0%, #FF8000 100%);
+      color: white; border: none; width: 100%;
+      padding: 20px; font-size: 24px; font-weight: bold; border-radius: 18px;
+      cursor: pointer; box-shadow: 0 8px 18px rgba(255, 153, 51, 0.45); margin-bottom: 16px;
+      transition: transform 0.1s, box-shadow 0.1s;
+      outline: none;
     }
-    .btn-main:active { transform: scale(0.97); background: #E67E00; }
+    .btn-main:active { transform: scale(0.97); }
     
-    .row { display: flex; gap: 10px; margin-bottom: 10px; }
+    .row { display: flex; gap: 10px; }
     .btn-sub {
-      flex: 1; padding: 14px; border: 2px solid #FF9933; background: white;
-      color: #CC5500; font-weight: bold; border-radius: 14px; cursor: pointer; font-size: 15px;
+      flex: 1; padding: 12px; border: 2px solid #FF9933; background: white;
+      color: #CC5500; font-weight: bold; border-radius: 14px; cursor: pointer; font-size: 14px;
+      outline: none;
     }
     .btn-sub:active { background: #FFE6CC; }
     
-    /* Overlay Screen: Fitted Image Display */
+    /* Overlay Modal */
     .overlay {
       display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.75); z-index: 1000;
+      background: rgba(0, 0, 0, 0.7); z-index: 1000;
       align-items: center; justify-content: center; padding: 16px;
     }
     .overlay.active { display: flex; }
     
     .overlay-card {
       background: #FFFDF8; border: 4px solid #FF9933; border-radius: 24px;
-      padding: 20px; text-align: center; max-width: 420px; width: 100%;
-      max-height: 90vh; display: flex; flex-direction: column; align-items: center;
-      box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+      padding: 24px 20px; text-align: center; max-width: 400px; width: 100%;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.4);
     }
     
     .end-img {
-      width: 100%; max-height: 50vh; border-radius: 16px;
+      width: 100%; max-height: 45vh; border-radius: 16px;
       object-fit: contain; margin-bottom: 14px; border: 2px solid #FF9933;
-      background-color: #000;
+      background: transparent;
     }
   </style>
 </head>
 <body>
 
-  <!-- Local Audio Tag -->
   <audio id="shankhAudio" src="shankh.mp3" preload="auto"></audio>
 
   <div class="card">
@@ -108,16 +167,18 @@
     <div class="sub" id="subTitle">1008 Sacred Chants Counter</div>
     <div class="timer" id="timerDisplay">⏱️ 00:00:00</div>
 
-    <div class="counter-box">
-      <div class="count-val" id="countDisplay">0</div>
-      <div class="target-val">Target: <span id="targetDisplay">1008</span></div>
+    <div class="circle-container">
+      <svg class="circle-svg" viewBox="0 0 220 220">
+        <circle class="circle-bg" cx="110" cy="110" r="100"></circle>
+        <circle class="circle-progress" id="circleProgress" cx="110" cy="110" r="100"></circle>
+      </svg>
+      <div class="circle-inner">
+        <div class="count-val" id="countDisplay">0</div>
+        <div class="target-val">Target: <span id="targetDisplay">1008</span></div>
+      </div>
     </div>
 
-    <div class="progress-bg">
-      <div class="progress-fill" id="progressFill"></div>
-    </div>
-
-    <button class="btn-main" onclick="increment()">COUNT (TAP)</button>
+    <button class="btn-main" onclick="increment()">Japa (TAP CHANT)</button>
 
     <div class="row">
       <button class="btn-sub" id="pauseBtn" onclick="togglePause()">⏸️ Pause</button>
@@ -126,12 +187,11 @@
     </div>
   </div>
 
-  <!-- End Completion Modal Overlay -->
   <div class="overlay" id="endOverlay">
     <div class="overlay-card">
-      <img src="images-krishna-3.jfif" class="end-img" alt="Krishna Viswaroopam" />
-      <h2 style="color: #CC5500; margin-bottom: 6px; font-size: 24px;">Japam Completed!</h2>
-      <p style="color: #8B4513; margin-bottom: 16px; font-weight:700; font-size: 18px;" id="finalTimeText">Total Time: 00:00:00</p>
+      <img src="images-krishna-3.jpg" class="end-img" alt="Krishna Viswaroopam" />
+      <h2 style="color: #CC5500; margin-bottom: 6px; font-size: 24px;">Japam Sampoornam!</h2>
+      <p style="color: #8B4513; margin-bottom: 16px; font-weight:700; font-size: 16px;" id="finalTimeText">Total Time: 00:00:00</p>
       <button class="btn-main" onclick="resetApp()">Start New Japam</button>
     </div>
   </div>
@@ -144,12 +204,20 @@
     let isPaused = localStorage.getItem('japam_paused') === 'true';
     let timerInterval = null;
 
+    const CIRCLE_CIRCUMFERENCE = 628;
+
     function saveState() {
       localStorage.setItem('japam_count', count);
       localStorage.setItem('japam_target', target);
       localStorage.setItem('japam_seconds', secondsElapsed);
       localStorage.setItem('japam_completed', isCompleted);
       localStorage.setItem('japam_paused', isPaused);
+    }
+
+    function triggerVibration() {
+      if ('vibrate' in navigator) {
+        navigator.vibrate(40);
+      }
     }
 
     function playSynthConch() {
@@ -173,10 +241,7 @@
     function playSound() {
       const audioElem = document.getElementById('shankhAudio');
       if (audioElem) {
-        audioElem.play().catch(err => {
-          console.log("Local audio play blocked, using synth sound", err);
-          playSynthConch();
-        });
+        audioElem.play().catch(() => playSynthConch());
       } else {
         playSynthConch();
       }
@@ -186,8 +251,11 @@
       document.getElementById('countDisplay').innerText = count;
       document.getElementById('targetDisplay').innerText = target;
       document.getElementById('targetBtnLabel').innerText = target;
-      document.getElementById('subTitle').innerText = `${target} Sacred Chants Counter`;
-      document.getElementById('progressFill').style.width = `${(count / target) * 100}%`;
+      document.getElementById('subTitle').innerText = `(${target} Sacred Chants)`;
+      
+      const progressPercent = Math.min(count / target, 1);
+      const strokeOffset = CIRCLE_CIRCUMFERENCE - (progressPercent * CIRCLE_CIRCUMFERENCE);
+      document.getElementById('circleProgress').style.strokeDashoffset = strokeOffset;
       
       const hrs = String(Math.floor(secondsElapsed / 3600)).padStart(2, '0');
       const mins = String(Math.floor((secondsElapsed % 3600) / 60)).padStart(2, '0');
@@ -234,6 +302,9 @@
 
     function increment() {
       if (isCompleted) return;
+      
+      triggerVibration();
+
       if (isPaused) {
         isPaused = false;
       }
